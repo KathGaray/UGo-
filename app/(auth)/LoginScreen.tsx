@@ -1,38 +1,34 @@
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  TouchableOpacity,
-} from "react-native";
-import React, { useEffect, useState } from "react";
-import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation } from "expo-router";
-import { login } from "@/auth.js";
-import { cls } from "nativewind";
+import { Image, StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Fontisto from 'react-native-vector-icons/Fontisto';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from 'expo-router';
+import { login, getUserSession } from '../../auth';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const checkSession = async () => {
       const session = await getUserSession();
       if (session) {
         const role = session.user?.role;
-        if (role === "conductor") {
+        if (role === 'conductor') {
           navigation.reset({
             index: 0,
-            routes: [{ name: "ConductorScreen" }],
+            routes: [{ name: 'ConductorScreen' }], 
           });
         } else {
           navigation.reset({
             index: 0,
-            routes: [{ name: "(tabs)", params: { screen: "index" } }],
+            routes: [{ name: '(tabs)', params: { screen: 'index' } }],
           });
         }
       }
@@ -46,24 +42,19 @@ const LoginScreen = () => {
     if (user) {
       const role = user.user?.role;
 
-      if (role === "conductor") {
+      if (role === 'conductor') {
         navigation.reset({
           index: 0,
-          routes: [{ name: "ConductorScreen" }],
+          routes: [{ name: 'ConductorScreen' }],
         });
       } else {
         navigation.reset({
           index: 0,
-          routes: [
-            {
-              name: "(tabs)",
-              params: { screen: "index", user: JSON.stringify(user.user) },
-            },
-          ],
+          routes: [{ name: '(tabs)', params: { screen: 'index', user: JSON.stringify(user.user) } }],
         });
       }
     } else {
-      setErrorMessage("Credenciales incorrectas");
+      setErrorMessage('Credenciales incorrectas');
     }
   };
 
@@ -72,49 +63,34 @@ const LoginScreen = () => {
   };
 
   return (
-    <View style={cls`bg-F5F5F5 flex-1 relative pb-160`}>
-      <TouchableOpacity
-        style={cls`absolute top-50 left-20 z-10`}
-        //onPress={() => navigation.navigate("(tabs)", { screen: "index" })}
-      >
+    <View style={styles.container}>
+
+      <TouchableOpacity style={styles.BackArrow} onPress={() => navigation.navigate('welcome')}>
         <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
       </TouchableOpacity>
 
-      <View style={cls`topImageContainer`}>
-        <Image
-          source={require("../../assets/topVector.png")}
-          style={cls`w-full h-160`}
-        />
+      <View style={styles.topImageContainer}>
+        <Image source={require("./assets/topVector.png")} style={styles.topImage} />
       </View>
 
-      <Text style={cls`text-center text-70 font-500 text-262626`}>Hello</Text>
-      <Text style={cls`text-center text-262626`}>Inicia Sesión</Text>
+      <Text style={styles.helloText}>Hello</Text>
+      <Text style={styles.signInText}>Inicia Sesión</Text>
 
-      <View style={cls`inputContainer mx-40 my-50`}>
-        <FontAwesome
-          name="user"
-          size={24}
-          color="#9A9A9A"
-          style={cls`ml-15 mr-5`}
-        />
+      <View style={styles.inputContainer}>
+        <FontAwesome name="user" size={24} color="#9A9A9A" style={styles.inputIcon} />
         <TextInput
-          style={cls`flex-1 px-10 font-16`}
-          placeholder="Usuario"
+          style={styles.textInput}
+          placeholder='Usuario'
           placeholderTextColor="#9A9A9A"
           value={username}
           onChangeText={setUsername}
         />
       </View>
 
-      <View style={cls`inputContainer1 mx-40 my-20`}>
-        <Fontisto
-          name="locked"
-          size={24}
-          color="#9A9A9A"
-          style={cls`ml-15 mr-5`}
-        />
+      <View style={styles.inputContainer1}>
+        <Fontisto name="locked" size={24} color="#9A9A9A" style={styles.inputIcon} />
         <TextInput
-          style={cls`flex-1 px-10 font-16`}
+          style={styles.textInput}
           placeholder="Contraseña"
           placeholderTextColor="#9A9A9A"
           secureTextEntry
@@ -123,15 +99,10 @@ const LoginScreen = () => {
         />
       </View>
 
-      {errorMessage ? (
-        <Text style={cls`text-center text-red mt-10`}>{errorMessage}</Text>
-      ) : null}
+      {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
 
-      <View style={cls`flex-row mt-90 w-90 justify-end`}>
-        <LinearGradient
-          colors={["#346DEE", "#5666F7"]}
-          style={cls`h-34 w-56 rounded-17 justify-center items-center mx-10`}
-        >
+      <View style={styles.signButtonContainer}>
+        <LinearGradient colors={['#346DEE', '#5666F7']} style={styles.linearGradient}>
           <TouchableOpacity onPress={handleLogin}>
             <AntDesign name="arrowright" size={24} color="white" />
           </TouchableOpacity>
@@ -139,40 +110,127 @@ const LoginScreen = () => {
       </View>
 
       <TouchableOpacity onPress={handleRegister}>
-        <Text style={cls`text-center text-262626 text-18 mt-70`}>
-          ¿No tienes cuenta? <Text style={cls`underline`}>Regístrate</Text>
+        <Text style={styles.footerText}>
+          ¿No tienes cuenta? <Text style={{ textDecorationLine: "underline" }}>Regístrate</Text>
         </Text>
       </TouchableOpacity>
 
-      <View style={cls`flex-row justify-center mt-20`}>
-        <AntDesign
-          name="apple1"
-          size={30}
-          color="black"
-          style={cls`socialIcon`}
-        />
-        <AntDesign
-          name="github"
-          size={30}
-          color="black"
-          style={cls`socialIcon`}
-        />
-        <AntDesign
-          name="google"
-          size={30}
-          color="black"
-          style={cls`socialIcon`}
-        />
+      <View style={styles.socialMediaContainer}>
+        <AntDesign name="apple1" size={30} color="black" style={styles.socialIcon} />
+        <AntDesign name="github" size={30} color="black" style={styles.socialIcon} />
+        <AntDesign name="google" size={30} color="black" style={styles.socialIcon} />
       </View>
 
-      <View style={cls`leftVectorContainer mt-n250 bottom-0 left-0`}>
-        <Image
-          source={require("../../assets/leftVector.png")}
-          style={cls`h-90 w-150`}
-        />
+      <View style={styles.leftVectorContainer}>
+        <Image source={require("./assets/leftVector.png")} style={styles.leftVectorImage} />
       </View>
     </View>
   );
 };
 
 export default LoginScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#F5F5F5",
+    flex: 1,
+    position: "relative",
+    paddingBottom: 160,
+  },
+  topImage: {
+    width: "100%",
+    height: 160,
+  },
+  helloText: {
+    textAlign: "center",
+    fontSize: 70,
+    fontWeight: "500",
+    color: "#262626",
+  },
+  signInText: {
+    textAlign: "center",
+    color: "#262626",
+  },
+  inputContainer: {
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    borderRadius: 20,
+    marginHorizontal: 40,
+    elevation: 10,
+    marginVertical: 20,
+    alignItems: "center",
+    height: 50,
+    marginTop: 50,
+  },
+  inputContainer1: {
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    borderRadius: 20,
+    marginHorizontal: 40,
+    elevation: 10,
+    marginVertical: 20,
+    alignItems: "center",
+    height: 50,
+  },
+  inputIcon: {
+    marginLeft: 15,
+    marginRight: 5,
+  },
+  textInput: {
+    flex: 1,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+  signButtonContainer: {
+    flexDirection: "row",
+    marginTop: 90,
+    width: "90%",
+    justifyContent: "flex-end",
+  },
+  linearGradient: {
+    height: 34,
+    width: 56,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 10,
+  },
+  footerText: {
+    color: "#262626",
+    textAlign: "center",
+    fontSize: 18,
+    marginTop: 70,
+  },
+  socialIcon: {
+    backgroundColor: "white",
+    elevation: 10,
+    margin: 10,
+    padding: 10,
+    borderRadius: 20,
+  },
+  socialMediaContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  leftVectorContainer: {
+    marginTop: -250,
+    bottom: 0,
+    left: 0,
+  },
+  leftVectorImage: {
+    height: "90%",
+    width: 150,
+  },
+  errorMessage: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  BackArrow: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+});

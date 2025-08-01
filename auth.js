@@ -80,7 +80,7 @@ export async function updateUserInfo(updates) {
 
     const response = await api.put('updateUser', updates, {
       headers: {
-        Authorization: Bearer ${token},
+        Authorization: 'Bearer ${token}',
       },
     });
 
@@ -108,7 +108,7 @@ export async function changePassword(current_password, new_password, new_passwor
       },
       {
         headers: {
-          Authorization: Bearer ${token},
+          Authorization: 'Bearer ${token}',
         },
       }
     );
@@ -128,7 +128,7 @@ export async function deleteAccount() {
 
     const response = await api.delete('deleteAccount', {
       headers: {
-        Authorization: Bearer ${token},
+        Authorization: 'Bearer ${token}',
       },
     });
 

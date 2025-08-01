@@ -4,7 +4,6 @@ import "react-native-reanimated";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 
-//Previene que la pantalla de inicio se esconda antes que assets lo cargue completamente
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -25,7 +24,6 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -38,3 +36,5 @@ export default function RootLayout() {
     </Stack>
   );
 }
+
+
