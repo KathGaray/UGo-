@@ -70,17 +70,15 @@ export async function logout() {
   }
 }
 
-
-
-
-//  Actualizacion de los datos información del usuario
+// Actualización de los datos información del usuario
 export async function updateUserInfo(updates) {
   try {
     const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('No se encontró token de autorización');
 
     const response = await api.put('updateUser', updates, {
       headers: {
-        Authorization: 'Bearer ${token}',
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -98,6 +96,7 @@ export async function updateUserInfo(updates) {
 export async function changePassword(current_password, new_password, new_password_confirmation) {
   try {
     const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('No se encontró token de autorización');
 
     const response = await api.put(
       'updatePassword',
@@ -108,7 +107,7 @@ export async function changePassword(current_password, new_password, new_passwor
       },
       {
         headers: {
-          Authorization: 'Bearer ${token}',
+          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -121,14 +120,15 @@ export async function changePassword(current_password, new_password, new_passwor
   }
 }
 
-// Aqui para Eliminar la cuenta del usuario
+// Para eliminar la cuenta del usuario
 export async function deleteAccount() {
   try {
     const token = await AsyncStorage.getItem('token');
+    if (!token) throw new Error('No se encontró token de autorización');
 
     const response = await api.delete('deleteAccount', {
       headers: {
-        Authorization: 'Bearer ${token}',
+        Authorization: `Bearer ${token}`,
       },
     });
 

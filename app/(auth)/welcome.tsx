@@ -1,27 +1,46 @@
-//Touchable opacity es un boton
-import { router } from "expo-router";
-import { useRef, useState } from "react";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, Image, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Swiper from "react-native-swiper";
+import { router } from "expo-router";
+import { getCurrentUser } from "../../auth";
 
 import { onboarding } from "@/constants";
 import CustomButton from "@/components/CustomButton";
 
 const Onboarding = () => {
-  //Creamos una referencia para el swiper
-  const swiperRef = useRef<Swiper>(null);
-
-  //Para dar seguimiento a los indexes entre los que navegamos así que creamos un stateCall
+  const swiperRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        router.replace("/"); 
+      } else {
+        setLoading(false); 
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <View
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <Text>Cargando...</Text>
+      </View>
+    );
+  }
 
   const isLastSlide = activeIndex === onboarding.length - 1;
+
   return (
     <SafeAreaView className="flex h-full items-center justify-between bg-white">
       <TouchableOpacity
-        onPress={() => {
-          router.replace("./SignupScreen");
-        }}
+        onPress={() => router.replace("./SignupScreen")}
         className="w-full flex justify-end items-end p-5"
       >
         <Text className="text-black text-md font-JakartaBold">Saltar</Text>
@@ -35,7 +54,6 @@ const Onboarding = () => {
         activeDot={
           <View className="w-[32px] h-[4px] mx-1 bg-[#0286FF] rounded-full" />
         }
-        //Propiedad on index change que tendra como propósito aceptar la función del callback con el nuevo index
         onIndexChanged={(index) => setActiveIndex(index)}
       >
         {onboarding.map((item) => (
@@ -45,7 +63,7 @@ const Onboarding = () => {
               className="w-full h-[300px]"
               resizeMode="contain"
             />
-            <View className="flex flex-row items-center justify-center w-full , mt-10">
+            <View className="flex flex-row items-center justify-center w-full mt-10">
               <Text className="text-black text-3xl font-bold mx-10 text-center">
                 {item.title}
               </Text>

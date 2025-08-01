@@ -6,7 +6,8 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from 'expo-router';
-import { login, getUserSession } from '../../auth';
+import { login, getCurrentUser, saveUserSession } from '../../auth'; 
+
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -28,7 +29,7 @@ const LoginScreen = () => {
         } else {
           navigation.reset({
             index: 0,
-            routes: [{ name: '(tabs)', params: { screen: 'index' } }],
+            routes: [{ name: 'index', params: { user: user.user } }],
           });
         }
       }
@@ -50,7 +51,7 @@ const LoginScreen = () => {
       } else {
         navigation.reset({
           index: 0,
-          routes: [{ name: '(tabs)', params: { screen: 'index', user: JSON.stringify(user.user) } }],
+          routes: [{ name: 'index', params: { user: user.user } }],
         });
       }
     } else {
@@ -62,15 +63,15 @@ const LoginScreen = () => {
     navigation.navigate("SignupScreen");
   };
 
+
   return (
     <View style={styles.container}>
-
       <TouchableOpacity style={styles.BackArrow} onPress={() => navigation.navigate('welcome')}>
         <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
       </TouchableOpacity>
 
       <View style={styles.topImageContainer}>
-        <Image source={require("./assets/topVector.png")} style={styles.topImage} />
+        <Image source={require('./assets/topVector.png')} style={styles.topImage} />
       </View>
 
       <Text style={styles.helloText}>Hello</Text>
@@ -80,10 +81,11 @@ const LoginScreen = () => {
         <FontAwesome name="user" size={24} color="#9A9A9A" style={styles.inputIcon} />
         <TextInput
           style={styles.textInput}
-          placeholder='Usuario'
+          placeholder="Usuario"
           placeholderTextColor="#9A9A9A"
           value={username}
           onChangeText={setUsername}
+          autoCapitalize="none"
         />
       </View>
 
@@ -96,6 +98,7 @@ const LoginScreen = () => {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
         />
       </View>
 
@@ -111,7 +114,7 @@ const LoginScreen = () => {
 
       <TouchableOpacity onPress={handleRegister}>
         <Text style={styles.footerText}>
-          ¿No tienes cuenta? <Text style={{ textDecorationLine: "underline" }}>Regístrate</Text>
+          ¿No tienes cuenta? <Text style={{ textDecorationLine: 'underline' }}>Regístrate</Text>
         </Text>
       </TouchableOpacity>
 
@@ -122,7 +125,7 @@ const LoginScreen = () => {
       </View>
 
       <View style={styles.leftVectorContainer}>
-        <Image source={require("./assets/leftVector.png")} style={styles.leftVectorImage} />
+        <Image source={require('./assets/leftVector.png')} style={styles.leftVectorImage} />
       </View>
     </View>
   );
@@ -132,44 +135,44 @@ export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: '#F5F5F5',
     flex: 1,
-    position: "relative",
+    position: 'relative',
     paddingBottom: 160,
   },
   topImage: {
-    width: "100%",
+    width: '100%',
     height: 160,
   },
   helloText: {
-    textAlign: "center",
+    textAlign: 'center',
     fontSize: 70,
-    fontWeight: "500",
-    color: "#262626",
+    fontWeight: '500',
+    color: '#262626',
   },
   signInText: {
-    textAlign: "center",
-    color: "#262626",
+    textAlign: 'center',
+    color: '#262626',
   },
   inputContainer: {
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
     borderRadius: 20,
     marginHorizontal: 40,
     elevation: 10,
     marginVertical: 20,
-    alignItems: "center",
+    alignItems: 'center',
     height: 50,
     marginTop: 50,
   },
   inputContainer1: {
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
     borderRadius: 20,
     marginHorizontal: 40,
     elevation: 10,
     marginVertical: 20,
-    alignItems: "center",
+    alignItems: 'center',
     height: 50,
   },
   inputIcon: {
@@ -182,35 +185,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   signButtonContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginTop: 90,
-    width: "90%",
-    justifyContent: "flex-end",
+    width: '90%',
+    justifyContent: 'flex-end',
   },
   linearGradient: {
     height: 34,
     width: 56,
     borderRadius: 17,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginHorizontal: 10,
   },
   footerText: {
-    color: "#262626",
-    textAlign: "center",
+    color: '#262626',
+    textAlign: 'center',
     fontSize: 18,
     marginTop: 70,
   },
   socialIcon: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     elevation: 10,
     margin: 10,
     padding: 10,
     borderRadius: 20,
   },
   socialMediaContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 20,
   },
   leftVectorContainer: {
@@ -219,7 +222,7 @@ const styles = StyleSheet.create({
     left: 0,
   },
   leftVectorImage: {
-    height: "90%",
+    height: '90%',
     width: 150,
   },
   errorMessage: {

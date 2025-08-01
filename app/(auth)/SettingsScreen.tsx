@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { getCurrentUser, updateUserInfo, changePassword, deleteAccount } from './auth';
+import { useNavigation } from '@react-navigation/native'; // ← Importación para navegación
+import { Ionicons } from '@expo/vector-icons'; // ← Ícono de flecha
+import { getCurrentUser, updateUserInfo, changePassword, deleteAccount } from '../../auth';
 
 const AccountSettingsScreen = () => {
+  const navigation = useNavigation(); // ← Hook para navegación
+
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -55,7 +59,7 @@ const AccountSettingsScreen = () => {
       const response = await fetch('http://192.168.0.6:8000/api/user/upload-image', {
         method: 'POST',
         headers: {
-          'Authorization': Bearer ${user.token},
+          'Authorization': `Bearer ${user?.token}`,
           'Content-Type': 'multipart/form-data',
         },
         body: formData,
@@ -78,16 +82,31 @@ const AccountSettingsScreen = () => {
   };
 
   const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !newPasswordConfirmation) {
+      return Alert.alert('Campos incompletos', 'Por favor, llena todos los campos de contraseña.');
+    }
+
     if (newPassword !== newPasswordConfirmation) {
       return Alert.alert('Error', 'Las contraseñas nuevas no coinciden');
     }
 
-    const result = await changePassword(currentPassword, newPassword, newPasswordConfirmation);
-    if (result) {
-      setCurrentPassword('');
-      setNewPassword('');
-      setNewPasswordConfirmation('');
-      Alert.alert('Éxito', 'Contraseña actualizada');
+    try {
+      const result = await changePassword(currentPassword, newPassword, newPasswordConfirmation);
+
+      if (result?.error === 'incorrect_password') {
+        return Alert.alert('Error', 'La contraseña actual no es correcta');
+      }
+
+      if (result?.success) {
+        setCurrentPassword('');
+        setNewPassword('');
+        setNewPasswordConfirmation('');
+        return Alert.alert('Éxito', 'Contraseña actualizada');
+      }
+
+      Alert.alert('Error', 'No se pudo actualizar la contraseña');
+    } catch (error) {
+      Alert.alert('Error', 'Ocurrió un error al cambiar la contraseña');
     }
   };
 
@@ -114,6 +133,12 @@ const AccountSettingsScreen = () => {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
+
+        {/* Flechita para volver */}
+        <TouchableOpacity onPress={() => navigation.navigate('index')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={pickImage}>
           <Image
             source={imageUri ? { uri: imageUri } : require('./assets/default-avatar.png')}
@@ -191,19 +216,26 @@ export default AccountSettingsScreen;
 
 const styles = StyleSheet.create({
   scrollContainer: {
-    paddingBottom: 40,
+    paddingBottom: 10,
   },
   container: {
     flex: 1,
-    padding: 20,
+    padding: 40,
     backgroundColor: '#fff',
+    position: 'relative',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 70,
+    left: 30,
+    zIndex: 10,
   },
   profileImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
     alignSelf: 'center',
-    marginTop: 20,
+    marginTop: 40,
     marginBottom: 10,
   },
   editText: {
@@ -237,17 +269,3 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
 });
-
-Diego Antonio Franco Vásquez, 8:10
-import axios from 'axios';
-
-// URL base de tu API en Laravel
-const api = axios.create({
-  baseURL: 'http://192.168.0.6:8000/api/',
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-});
-
-export default api;
