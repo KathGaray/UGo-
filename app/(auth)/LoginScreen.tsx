@@ -1,72 +1,76 @@
 import { Image, StyleSheet, Text, TextInput, View, TouchableOpacity } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import React, { useCallback, useEffect, useState } from 'react';
+import Entypo from 'react-native-vector-icons/Entypo';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from 'expo-router';
-import { login, getCurrentUser, saveUserSession } from '../../auth'; 
-
+import { useRouter } from 'expo-router';
+import { useSignIn, useUser } from '@clerk/clerk-expo';
+import ModalMessage from '../../components/ModalMessage'; 
 
 const LoginScreen = () => {
-  const navigation = useNavigation();
+  const { signIn, setActive, isLoaded } = useSignIn();
+  const { user } = useUser();
+  const router = useRouter();
 
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const session = await getUserSession();
-      if (session) {
-        const role = session.user?.role;
-        if (role === 'conductor') {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'ConductorScreen' }], 
-          });
-        } else {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'index', params: { user: user.user } }],
-          });
-        }
-      }
-    };
-    checkSession();
-  }, []);
+  // Estados para manejar modal de error
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
-  const handleLogin = async () => {
-    const user = await login(username, password);
+  const showErrorModal = (message: string) => {
+    setModalMessage(message);
+    setModalVisible(true);
+  };
+
+  const onSignInPress = useCallback(async () => {
+    if (!isLoaded) return;
 
     if (user) {
-      const role = user.user?.role;
+      router.replace('/');
+      return;
+    }
+
+    try {
+      const signInAttempt = await signIn.create({
+        identifier: email,
+        password,
+      });
+
+      if (signInAttempt.status === 'complete') {
+        await setActive({ session: signInAttempt.createdSessionId });
+        router.replace('/');
+      } else {
+        showErrorModal('Debes completar pasos adicionales para iniciar sesión.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      if (err.errors && err.errors[0]?.code === 'form_password_incorrect') {
+        showErrorModal('Contraseña incorrecta. Intenta de nuevo.');
+      } else {
+        showErrorModal('Error al iniciar sesión. Revisa tus datos.');
+      }
+    }
+  }, [isLoaded, email, password, user]);
+
+  useEffect(() => {
+    if (user) {
+      const role = user.publicMetadata?.role;
 
       if (role === 'conductor') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'ConductorScreen' }],
-        });
+        router.replace('/ConductorScreen');
       } else {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'index', params: { user: user.user } }],
-        });
+        router.replace('/');
       }
-    } else {
-      setErrorMessage('Credenciales incorrectas');
     }
-  };
-
-  const handleRegister = () => {
-    navigation.navigate("SignupScreen");
-  };
-
+  }, [user]);
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.BackArrow} onPress={() => navigation.navigate('welcome')}>
+      <TouchableOpacity style={styles.BackArrow} onPress={() => router.back()}>
         <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
       </TouchableOpacity>
 
@@ -78,14 +82,15 @@ const LoginScreen = () => {
       <Text style={styles.signInText}>Inicia Sesión</Text>
 
       <View style={styles.inputContainer}>
-        <FontAwesome name="user" size={24} color="#9A9A9A" style={styles.inputIcon} />
+        <Entypo name="email" size={24} color="#9A9A9A" style={styles.inputIcon} />
         <TextInput
           style={styles.textInput}
-          placeholder="Usuario"
+          placeholder="Email"
           placeholderTextColor="#9A9A9A"
-          value={username}
-          onChangeText={setUsername}
+          value={email}
+          onChangeText={setEmail}
           autoCapitalize="none"
+          keyboardType="email-address"
         />
       </View>
 
@@ -102,17 +107,15 @@ const LoginScreen = () => {
         />
       </View>
 
-      {errorMessage ? <Text style={styles.errorMessage}>{errorMessage}</Text> : null}
-
       <View style={styles.signButtonContainer}>
         <LinearGradient colors={['#346DEE', '#5666F7']} style={styles.linearGradient}>
-          <TouchableOpacity onPress={handleLogin}>
+          <TouchableOpacity onPress={onSignInPress}>
             <AntDesign name="arrowright" size={24} color="white" />
           </TouchableOpacity>
         </LinearGradient>
       </View>
 
-      <TouchableOpacity onPress={handleRegister}>
+      <TouchableOpacity onPress={() => router.push('/SignupScreen')}>
         <Text style={styles.footerText}>
           ¿No tienes cuenta? <Text style={{ textDecorationLine: 'underline' }}>Regístrate</Text>
         </Text>
@@ -127,6 +130,14 @@ const LoginScreen = () => {
       <View style={styles.leftVectorContainer}>
         <Image source={require('./assets/leftVector.png')} style={styles.leftVectorImage} />
       </View>
+
+      {/* Modal de error */}
+      <ModalMessage
+        visible={modalVisible}
+        title="Error"
+        message={modalMessage}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 };
@@ -224,11 +235,6 @@ const styles = StyleSheet.create({
   leftVectorImage: {
     height: '90%',
     width: 150,
-  },
-  errorMessage: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
   },
   BackArrow: {
     position: 'absolute',

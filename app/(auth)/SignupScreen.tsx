@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import {View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ImageBackground, Alert, } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ImageBackground,
+} from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Fontisto from 'react-native-vector-icons/Fontisto';
 import Entypo from 'react-native-vector-icons/Entypo';
@@ -7,36 +15,142 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from 'expo-router';
-import { register } from '../../auth'; 
+import { useSignUp } from '@clerk/clerk-expo';
+import ReactNativeModal from 'react-native-modal';
+
+import CustomButton from '@/components/CustomButton';
+import InputField from '../../components/InputField';
+import ModalMessage from '@/components/ModalMessage'; 
+import { icons } from '@/constants';
 
 const SignupScreen = () => {
   const navigation = useNavigation();
+  const { isLoaded, signUp, setActive } = useSignUp();
+
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
-      return;
+  const [verification, setVerification] = useState({
+    state: 'default',
+    error: '',
+    code: '',
+  });
+
+  useEffect(() => {
+    if (verification.state === 'success') {
+      const timer = setTimeout(() => {
+        setVerification({ state: 'default', code: '', error: '' });
+        navigation.navigate('LoginScreen');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [verification.state]);
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
+
+  const handleError = (msg: string) => {
+    setErrorMessage(msg);
+    setShowErrorModal(true);
+  };
+
+  const onSignUpPress = async () => {
+    if (!isLoaded) return;
+
+    if (!username || !email || !password || !confirmPassword) {
+      return handleError('Completa todos los campos');
     }
 
-    const response = await register(username, email, password, confirmPassword);
-    
-    if (response) {
-      Alert.alert('Éxito', 'Registro exitoso');
-      navigation.navigate('LoginScreen'); 
-    } else {
-      Alert.alert('Error', 'No se pudo registrar. Verifica los datos.');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return handleError('Correo inválido');
+    }
+
+    if (password.length < 6) {
+      return handleError('La contraseña debe tener al menos 6 caracteres');
+    }
+
+    if (password !== confirmPassword) {
+      return handleError('Las contraseñas no coinciden');
+    }
+
+    try {
+      await signUp.create({
+        emailAddress: email,
+        password: password,
+      });
+
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+
+      setVerification({
+        state: 'verification',
+        error: '',
+        code: '',
+      });
+    } catch (err: any) {
+      console.error('Error en signUp:', JSON.stringify(err, null, 2));
+      const errorMsg =
+        err?.errors?.[0]?.longMessage || err.message || 'Error desconocido';
+      handleError(errorMsg);
+    }
+  };
+
+  const onVerifyPress = async () => {
+    if (!isLoaded) return;
+
+    if (!verification.code) {
+      return handleError('Por favor ingresa el código de verificación');
+    }
+
+    try {
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: verification.code,
+      });
+
+      if (completeSignUp.status === 'complete') {
+        await setActive({ session: completeSignUp.createdSessionId });
+        setVerification({
+          state: 'success',
+          error: '',
+          code: '',
+        });
+      } else {
+        setVerification({
+          state: 'failed',
+          error: 'La verificación falló. Intenta nuevamente.',
+          code: verification.code,
+        });
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err?.errors?.[0]?.longMessage || err.message || 'Error desconocido';
+      setVerification({
+        state: 'failed',
+        error: errorMsg,
+        code: verification.code,
+      });
+      handleError(errorMsg);
     }
   };
 
   return (
     <View style={styles.container}>
-
-      <TouchableOpacity style={styles.BackArrow} onPress={() => navigation.navigate('welcome')}>
+      <TouchableOpacity
+        style={styles.BackArrow}
+        onPress={() => navigation.navigate('welcome')}
+      >
         <MaterialIcons name="arrow-back-ios-new" size={24} color="white" />
       </TouchableOpacity>
 
@@ -68,6 +182,7 @@ const SignupScreen = () => {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
+          autoCapitalize="none"
         />
       </View>
 
@@ -80,6 +195,7 @@ const SignupScreen = () => {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
         />
       </View>
 
@@ -92,26 +208,71 @@ const SignupScreen = () => {
           secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
+          autoCapitalize="none"
         />
       </View>
 
       <View style={styles.signButtonContainer}>
-        <LinearGradient
-          colors={['#346DEE', '#5666F7']}
-          style={styles.linearGradient}>
-          <TouchableOpacity onPress={handleRegister}>
+        <LinearGradient colors={['#346DEE', '#5666F7']} style={styles.linearGradient}>
+          <TouchableOpacity onPress={onSignUpPress}>
             <AntDesign name="arrowright" size={24} color="white" />
           </TouchableOpacity>
         </LinearGradient>
       </View>
 
+      <ReactNativeModal
+        isVisible={verification.state === 'verification'}
+        onModalHide={() => {
+          if (verification.state === 'success') setShowSuccessModal(true);
+        }}
+      >
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Verifica tu Email</Text>
+          <Text style={styles.modalSubtitle}>
+            Hemos enviado un código de verificación a tu email.
+          </Text>
+
+          <InputField
+            label="Código"
+            icon={icons.lock}
+            placeholder="12345"
+            value={verification.code}
+            keyboardType="numeric"
+            onChangeText={(code) => setVerification({ ...verification, code })}
+          />
+
+          <CustomButton
+            title="Verificar Email"
+            onPress={onVerifyPress}
+            className="mt-5 bg-success-500"
+          />
+        </View>
+      </ReactNativeModal>
+
+      <ReactNativeModal isVisible={showSuccessModal}>
+        <View style={styles.modalContentSuccess}>
+          <Image
+            source={require('./assets/check.png')}
+            style={{ width: 110, height: 110, marginVertical: 20 }}
+            resizeMode="contain"
+          />
+          <Text style={styles.successTitle}>Verificado</Text>
+          <Text style={styles.modalSubtitle}>Tu verificación ha sido exitosa</Text>
+        </View>
+      </ReactNativeModal>
+
+      <ModalMessage
+        visible={showErrorModal}
+        title="Error"
+        message={errorMessage}
+        onClose={() => setShowErrorModal(false)}
+      />
+
       <View style={styles.footerContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')}>
           <Text style={styles.footerText}>
             Ya tienes una cuenta?{' '}
-            <Text style={{ textDecorationLine: 'underline' }}>
-              Inicia Sesion
-            </Text>
+            <Text style={{ textDecorationLine: 'underline' }}>Inicia Sesión</Text>
           </Text>
         </TouchableOpacity>
 
@@ -123,13 +284,17 @@ const SignupScreen = () => {
       </View>
 
       <View style={styles.leftVectorContainer}>
-        <ImageBackground source={require('./assets/leftVector.png')} style={styles.leftVectorImage} />
+        <ImageBackground
+          source={require('./assets/leftVector.png')}
+          style={styles.leftVectorImage}
+        />
       </View>
     </View>
   );
 };
 
 export default SignupScreen;
+
 
 const styles = StyleSheet.create({
   container: {
@@ -138,12 +303,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     paddingBottom: 160,
   },
-  topImageContainer: {},
   topImage: {
     width: '100%',
     height: 160,
   },
-  helloContainer: {},
   helloText: {
     textAlign: 'center',
     fontSize: 50,
@@ -194,20 +357,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 10,
   },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginHorizontal: 40,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
   footerText: {
     color: '#262626',
     textAlign: 'center',
     fontSize: 18,
     marginTop: 40,
-  },
-  leftVectorContainer: {
-    marginTop: -200,
-    bottom: 0,
-    left: 0,
-  },
-  leftVectorImage: {
-    height: '90%',
-    width: 150,
   },
   footerContainer: {
     marginTop: 20,
@@ -220,16 +381,58 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   socialMediaContainer: {
-    display: 'flex',
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
   },
-
+  modalContent: {
+    backgroundColor: 'white',
+    paddingHorizontal: 28,
+    paddingVertical: 36,
+    borderRadius: 24,
+    minHeight: 300,
+  },
+  modalContentSuccess: {
+    backgroundColor: 'white',
+    paddingHorizontal: 28,
+    paddingVertical: 36,
+    borderRadius: 24,
+    minHeight: 300,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#333333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  leftVectorContainer: {
+    marginTop: -200,
+    bottom: 0,
+    left: 0,
+  },
+  leftVectorImage: {
+    height: '90%',
+    width: 150,
+  },
   BackArrow: {
     position: 'absolute',
     top: 50,
     left: 20,
     zIndex: 10,
-  },  
+  },
 });

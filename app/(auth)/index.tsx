@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { logout, getCurrentUser } from '../../auth';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -18,17 +18,12 @@ export default function Index() {
   const [menuOpen, setMenuOpen] = useState(false);
   const slideAnim = useState(new Animated.Value(-screenWidth))[0];
   const router = useRouter();
-  const [user, setUser] = useState(null);
 
-  // Cargar usuario al entrar
-  useEffect(() => {
-     const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    };
-    fetchUser();
-  }, []);
-  
+  const { signOut } = useAuth();
+  const { user, isSignedIn } = useUser();
+
+  const userEmail = user?.emailAddresses[0]?.emailAddress || 'Invitado';
+
   const handleLogout = () => {
     Alert.alert("Cerrar sesión", "¿Estás seguro?", [
       { text: "Cancelar", style: "cancel" },
@@ -36,14 +31,12 @@ export default function Index() {
         text: "Cerrar sesión",
         style: "destructive",
         onPress: async () => {
-          await logout(); 
-          setUser(null);
+          await signOut(); 
           router.replace("welcome"); 
         },
       },
     ]);
   };
-
 
   const toggleMenu = () => {
     if (menuOpen) {
@@ -62,10 +55,8 @@ export default function Index() {
     }
   };
 
-
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={toggleMenu}>
           <MaterialIcons name="menu" size={30} color="white" />
@@ -73,12 +64,10 @@ export default function Index() {
         <Text style={styles.headerText}>Inicio</Text>
       </View>
 
-      {/* Contenido principal */}
       <View style={styles.content}>
-        <Text style={{ fontSize: 24 }}>Bienvenido</Text>
+        <Text style={{ fontSize: 24 }}>Bienvenido {userEmail}</Text>
       </View>
 
-      {/* Menú lateral */}
       {menuOpen && (
         <TouchableOpacity style={styles.overlay} onPress={toggleMenu} />
       )}
@@ -91,6 +80,11 @@ export default function Index() {
         ]}
       >
         <Text style={styles.menuTitle}>Menú</Text>
+
+        <Text style={[styles.menuText, { marginBottom: 20 }]}>
+          Usuario: {userEmail}
+        </Text>
+
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => {

@@ -1,10 +1,29 @@
-import { Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect } from "expo-router";
+import { useEffect } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/clerk-expo";
 
 const Home = () => {
-  //Redirijimos a la página de bienvenida
-  return <Redirect href="/(auth)/welcome" />;
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof isSignedIn === "boolean") {
+      if (isSignedIn) {
+        router.replace('/(auth)');  
+      } else {
+        router.replace("/(auth)/welcome"); 
+      }
+    }
+  }, [isSignedIn, router]);
+
+  
+  return (
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <ActivityIndicator size="large" color="#346DEE" />
+      <Text>Cargando...</Text>
+    </View>
+  );
 };
 
 export default Home;

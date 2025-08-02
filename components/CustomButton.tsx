@@ -1,60 +1,37 @@
-//Creación de un botón personalizado
-import { Text, TouchableOpacity } from "react-native";
+import React from 'react';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-import { ButtonProps } from "@/types/type";
+interface CustomButtonProps {
+  title: string;
+  onPress: () => void;
+}
 
-const getBgVariantStyle = (Variant: ButtonProps["bgVariant"]) => {
-  switch (Variant) {
-    case "secondary":
-      return "bg-gray-500";
-    case "danger":
-      return "bg-red-500";
-    case "success":
-      return "bg-green-500";
-    case "outline":
-      return "bg-transparent border border-neutral-300 border-[0.5px]";
-    default:
-      return "bg-[#0286FF]";
-  }
-};
-
-const getTextVariantStyle = (Variant: ButtonProps["textVariant"]) => {
-  switch (Variant) {
-    case "primary":
-      return "text-black";
-    case "secondary":
-      return "text-gray-100";
-    case "danger":
-      return "text-red-100";
-    case "success":
-      return "text-green-100";
-    default:
-      return "text-white";
-  }
-};
-
-const CustomButton = ({
-  onPress,
-  title,
-  bgVariant = "primary",
-  textVariant = "default",
-  IconLeft,
-  IconRight,
-  className,
-  ...props
-}: ButtonProps) => {
+const CustomButton: React.FC<CustomButtonProps> = ({ title, onPress }) => {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`w-full rounded-full  p-3 flex flex-row justify-center items-center shadow-md shadow-neutral-400/70 ${getBgVariantStyle(bgVariant)} ${className}`}
-      {...props}
+      style={styles.button}
+      activeOpacity={0.7}
     >
-      {IconLeft && <IconLeft />}
-      <Text className={`text-lg font-bold}${getTextVariantStyle(textVariant)}`}>
-        {title}
-      </Text>
-      {IconRight && <IconRight />}
+      <Text style={styles.buttonText}>{title}</Text>
     </TouchableOpacity>
   );
 };
+
 export default CustomButton;
+
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#22c55e', // Verde tipo success
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

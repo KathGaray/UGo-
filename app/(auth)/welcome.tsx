@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Swiper from "react-native-swiper";
 import { router } from "expo-router";
-import { getCurrentUser } from "../../auth";
+import { useUser } from '@clerk/clerk-expo';  
 
 import { onboarding } from "@/constants";
 import CustomButton from "@/components/CustomButton";
@@ -11,25 +11,22 @@ import CustomButton from "@/components/CustomButton";
 const Onboarding = () => {
   const swiperRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+
+  
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        router.replace("/"); 
-      } else {
-        setLoading(false); 
+    if (isLoaded) {
+      if (user) {
+        
+        router.replace("/");
       }
-    };
-    fetchUser();
-  }, []);
+    }
+  }, [isLoaded, user]);
 
-  if (loading) {
+  if (!isLoaded) {
     return (
-      <View
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Cargando...</Text>
       </View>
     );
